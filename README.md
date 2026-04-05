@@ -41,8 +41,11 @@ IP 前缀（如 `91.108.56.`）用于匹配同一段内的所有地址。
 1. 准备一个域名，如 `mtproto.example.com`
 2. 为每个 Telegram 数据中心设置子域名 DNS 记录，指向对应的 Telegram DC IP：
    ```
-   dc1.mtproto.example.com → 149.154.175.5
-   dc2.mtproto.example.com → 95.161.76.100
+   1.mtproto.example.com → 2001:b28:f23d:f001::a
+   2.mtproto.example.com → 2001:67c:4e8:f002::a
+   3.mtproto.example.com → 2001:b28:f23d:f003::a
+   4.mtproto.example.com → 2001:67c:4e8:f004::a
+   5.mtproto.example.com → 2001:b28:f23d:f005::a
    ...
    ```
 3. 编辑 `dcmap.json`，填入各 IP 到子域名的映射
