@@ -48,7 +48,8 @@ IP 前缀（如 `91.108.56.`）用于匹配同一段内的所有地址。
    5.mtproto.example.com → 2001:b28:f23d:f005::a
    ...
    ```
-3. 编辑 `dcmap.json`，填入各 IP 到子域名的映射
+3. 设置SSL/TLS模式为“Flexible”
+4. 编辑 `dcmap.json`，填入各 IP 到子域名的映射
 
 ## 评论
 
