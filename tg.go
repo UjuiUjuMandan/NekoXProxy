@@ -1,81 +1,70 @@
 package main
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
+	"os"
 	"strings"
 )
 
-var mapper = make(map[string]int)
+var mapper = make(map[string]string) // IP (or prefix) → subdomain
 var proxyScheme = "https"
+var nekoXProxyBaseDomain string
 
 func parseNekoXString(a string) bool {
 	if a == "" {
 		return false
 	}
 
-	url, err := url.Parse(a)
+	u, err := url.Parse(a)
 	if err != nil {
 		return false
 	}
 
-	pldstr, _ := base64.RawURLEncoding.DecodeString(url.Query().Get("payload"))
-	plds := strings.Split(string(pldstr), ",")
+	nekoXProxyBaseDomain = u.Host
 
-	nekoXProxyBaseDomain = url.Host
-	nekoXProxyDomains = append([]string{""}, plds...)
-
-	if url.Scheme == "ws" {
+	if u.Scheme == "ws" {
 		proxyScheme = "http"
+	} else {
+		proxyScheme = "https"
 	}
 
-	fmt.Printf("Base domain: %s\nDomains: %v\nScheme: %s\n", nekoXProxyBaseDomain, plds, proxyScheme)
-
-	putmapper := func(ip string, dc int) {
-		mapper[ip] = dc
-	}
-
-	putmapper("149.154.175.5", 1)
-	putmapper("95.161.76.100", 2)
-	putmapper("149.154.175.100", 3)
-	putmapper("149.154.167.91", 4)
-	putmapper("149.154.167.92", 4)
-	putmapper("149.154.171.5", 5)
-	putmapper("2001:b28:f23d:f001:0000:0000:0000:000a", 1)
-	putmapper("2001:67c:4e8:f002:0000:0000:0000:000a", 2)
-	putmapper("2001:b28:f23d:f003:0000:0000:0000:000a", 3)
-	putmapper("2001:67c:4e8:f004:0000:0000:0000:000a", 4)
-	putmapper("2001:b28:f23f:f005:0000:0000:0000:000a", 5)
-	putmapper("149.154.161.144", 2)
-	putmapper("149.154.175.1", 3)
-	putmapper("91.108.56.", 5)
-	putmapper("2001:b28:f23d:f001:0000:0000:0000:000d", 1)
-	putmapper("2001:67c:4e8:f002:0000:0000:0000:000d", 2)
-	putmapper("2001:b28:f23d:f003:0000:0000:0000:000d", 3)
-	putmapper("2001:67c:4e8:f004:0000:0000:0000:000d", 4)
-	putmapper("2001:b28:f23f:f005:0000:0000:0000:000d", 5)
-	putmapper("149.154.175.40", 6)
-	putmapper("149.154.167.40", 7)
-	putmapper("149.154.175.117", 8)
-	putmapper("2001:b28:f23d:f001:0000:0000:0000:000e", 6)
-	putmapper("2001:67c:4e8:f002:0000:0000:0000:000e", 7)
-	putmapper("2001:b28:f23d:f003:0000:0000:0000:000e", 8)
-
+	fmt.Printf("Base domain: %s\nScheme: %s\n", nekoXProxyBaseDomain, proxyScheme)
 	return true
 }
 
-func dc2wsurl(dc int) string {
-	if dc == 0 {
-		return ""
+func loadMapper(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
 	}
-	return fmt.Sprintf("%s://%s.%s/api", proxyScheme, nekoXProxyDomains[dc], nekoXProxyBaseDomain)
+	if err := json.Unmarshal(data, &mapper); err != nil {
+		return err
+	}
+	fmt.Printf("Loaded %d IP mappings from %s\n", len(mapper), path)
+	return nil
 }
 
-func ip2dc(ip string) int {
+func ip2wsurl(ip string) string {
+	sub := ip2subdomain(ip)
+	if sub == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s://%s.%s/api", proxyScheme, sub, nekoXProxyBaseDomain)
+}
+
+func ip2subdomain(ip string) string {
+	parsed := net.ParseIP(ip)
 	for k, v := range mapper {
 		if ip == k {
 			return v
+		}
+		if parsed != nil {
+			if kp := net.ParseIP(k); kp != nil && parsed.Equal(kp) {
+				return v
+			}
 		}
 	}
 	for k, v := range mapper {
@@ -83,9 +72,5 @@ func ip2dc(ip string) int {
 			return v
 		}
 	}
-	return 0
-}
-
-func ip2wsurl(ip string) string {
-	return dc2wsurl(ip2dc(ip))
+	return ""
 }
