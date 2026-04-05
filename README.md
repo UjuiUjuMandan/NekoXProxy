@@ -50,16 +50,3 @@ IP 前缀（如 `91.108.56.`）用于匹配同一段内的所有地址。
    ```
 3. 设置SSL/TLS模式为“Flexible”
 4. 编辑 `dcmap.json`，填入各 IP 到子域名的映射
-
-## 评论
-
-猫耳逆变器 @tehcneko 在2022年2月[发布](https://t.me/NekoUpdates/223)了名为tcp2ws的闭源jar文件、后来又开发了GUI程序[WSProxy](https://github.com/Nekogram/WSProxy)。
-
-世界 @nekohasekai 和 @arm64-v8a 重新实现并开源了它。
-
-然而，所有对WS的提及是错误和误导性的、因为没有使用WebSocket，Cloudflare仅代理了HTTP Post请求。
-
-只有Telegram Web版本会使用WebSocket传输，要将其转换为一般MTProxy，请见：
-
-- https://github.com/Flowseal/tg-ws-proxy
-- https://github.com/valnesfjord/tg-ws-proxy-rs
