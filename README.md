@@ -1,61 +1,61 @@
-# IMPORTANT NOTE
+# NekoXProxy
 
-It's a demo project. Don't use for production.
+## 原理
 
-本项目仅为演示，不保证可用性。
+本程序作为本地HTTP代理运行。当Telegram客户端请求某个数据中心IP时，程序根据`dcmap.json`将该IP映射到中继域名的子域名，并将请求转发至中继服务器。
 
-# 这是什么
+```
+Telegram 客户端 → NekoXProxy → http(s)://<子域名>.<中继域名>/api → Cloudflare → Telegram DC
+```
 
-备用代理，以防失联，适用于电脑端。
+## 使用方法
 
-原理与 `Nekogram` `Nekogram X` 的公共代理一致。
+```
+./NekoXProxy -p http://mtproto.example.com -c dcmap.json -l 127.0.0.1:26641
+```
 
-本程序获取的是 `Nekogram X` 的节点。
+| 参数 | 默认值            | 说明                                              |
+| ---- | ----------------- | ------------------------------------------------- |
+| `-p` | 必填              | 中继服务器 base URL，使用 `http://` 或 `https://` |
+| `-c` | `dcmap.json`      | IP → 子域名映射配置文件                           |
+| `-l` | `127.0.0.1:26641` | 本地监听地址                                      |
 
-# 如何自行搭建 WSS 中继
+## dcmap.json 格式
 
-需要自行转发 https / websocket （以使用 CDN 为例）
+键为 Telegram 服务器 IP（或 IP 前缀），值为对应的子域名。
 
-1. 准备一个域名。如 tg.gov.cn
+```json
+{
+  "149.154.175.5": "dc1",
+  "95.161.76.100": "dc2",
+  "91.108.56.": "dc5"
+}
+```
 
-2. 根据 [这里](https://github.com/arm64v8a/NekoXProxy/blob/master/tg.go#L30) 的记录，设置相应数量的子域名记录（目前为 8 个）
+若 `-p http://mtproto.example.com`，则 `149.154.175.5` 的请求会被转发到 `http://dc1.mtproto.example.com/api`。
 
-如 `a.tg.gov.cn -> 149.154.175.5` `b.tg.gov.cn -> 95.161.76.100` ......
+IP 前缀（如 `91.108.56.`）用于匹配同一段内的所有地址。
 
-3. 开启 CDN 加速，打开 tls 以及 websocket 支持
+## 自行搭建中继
 
-4. 按照顺序构造 payload 得到 `a,b,c,d,e,f,g,h`
+1. 准备一个域名，如 `mtproto.example.com`
+2. 为每个 Telegram 数据中心设置子域名 DNS 记录，指向对应的 Telegram DC IP：
+   ```
+   dc1.mtproto.example.com → 149.154.175.5
+   dc2.mtproto.example.com → 95.161.76.100
+   ...
+   ```
+3. 编辑 `dcmap.json`，填入各 IP 到子域名的映射
 
-5. 将 payload 进行 base64 编码得到 `YSxiLGMsZCxlLGYsZyxo`
+## 评论
 
-6. 构造 WS Relay 链接： `wss://tg.gov.cn?payload=YSxiLGMsZCxlLGYsZyxo`
+猫耳逆变器 @tehcneko 在2022年2月[发布](https://t.me/NekoUpdates/223)了名为tcp2ws的闭源jar文件、后来又开发了GUI程序[WSProxy](https://github.com/Nekogram/WSProxy)。
 
-以上链接纯属虚构，请勿尝试使用。
+世界 @nekohasekai 和 @arm64-v8a 重新实现并开源了它。
 
-# English translated by Google
+然而，所有对WS的提及是错误和误导性的、因为没有使用WebSocket，Cloudflare仅代理了HTTP Post请求。
 
-# What is this
+只有Telegram Web版本会使用WebSocket传输，要将其转换为一般MTProxy，请见：
 
-Backup agent, in case of loss of connection, suitable for computer side.
-
-Consistent with Nekogram X's public agency.
-
-# How to setup WSS Realy by yourself
-
-Need to forward https / websocket by yourself (using CDN as an example)
-
-1. Prepare a domain name. Such as tg.gov.cn
-
-2. According to the records of [here](https://github.com/arm64v8a/NekoXProxy/blob/master/tg.go#L30), set the corresponding number of subdomain records (currently 8)
-
-Such as `a.tg.gov.cn -> 149.154.175.5` `b.tg.gov.cn -> 95.161.76.100` ......
-
-3. Turn on CDN acceleration, turn on tls and websocket support
-
-4. Construct the payload in order to get `a, b, c, d, e, f, g, h`
-
-5. Encode the payload with base64 to get `YSxiLGMsZCxlLGYsZyxo`
-
-6. Construct WS Relay link: `wss://tg.gov.cn?payload=YSxiLGMsZCxlLGYsZyxo`
-
-The above link is purely fictitious, please do not try to use it.
+- https://github.com/Flowseal/tg-ws-proxy
+- https://github.com/valnesfjord/tg-ws-proxy-rs
