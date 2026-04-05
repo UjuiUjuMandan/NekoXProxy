@@ -1,14 +1,11 @@
 package main
 
 import (
-	"encoding/base64"
 	"flag"
 	"log"
 	"net/http"
 	"time"
 )
-
-var nekoXProxyString string
 
 var nekoXProxyBaseDomain string
 var nekoXProxyDomains []string
@@ -17,20 +14,15 @@ var client *http.Client
 
 func main() {
 	listen := flag.String("l", "127.0.0.1:26641", "HttpProxy listen port")
-	_nekoXProxyString := flag.String("p", "", "NekoX Proxy URL (keep empty if you don't know)")
+	_nekoXProxyString := flag.String("p", "", "NekoX Proxy URL")
 	flag.Parse()
 
-	var ok bool
-	if *_nekoXProxyString != "" {
-		ok = parseNekoXString(base64.RawURLEncoding.EncodeToString([]byte(*_nekoXProxyString)))
-	} else {
-		log.Println("Getting NekoX public proxy...")
-		ok = parseNekoXString(getNekoXString())
+	if *_nekoXProxyString == "" {
+		log.Fatalln("Relay address is required. Use -p to specify the NekoX Proxy URL.")
 	}
 
-	if !ok {
-		log.Println("Failed to parse NekoX proxy.")
-		return
+	if !parseNekoXString(*_nekoXProxyString) {
+		log.Fatalln("Failed to parse NekoX proxy.")
 	}
 
 	client = &http.Client{}

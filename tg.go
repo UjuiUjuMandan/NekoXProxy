@@ -8,16 +8,14 @@ import (
 )
 
 var mapper = make(map[string]int)
+var proxyScheme = "https"
 
 func parseNekoXString(a string) bool {
-	// fmt.Println(a)
-
 	if a == "" {
 		return false
 	}
 
-	b, _ := base64.StdEncoding.DecodeString(a)
-	url, err := url.Parse(string(b))
+	url, err := url.Parse(a)
 	if err != nil {
 		return false
 	}
@@ -28,7 +26,11 @@ func parseNekoXString(a string) bool {
 	nekoXProxyBaseDomain = url.Host
 	nekoXProxyDomains = append([]string{""}, plds...)
 
-	// fmt.Println(url.String())
+	if url.Scheme == "ws" {
+		proxyScheme = "http"
+	}
+
+	fmt.Printf("Base domain: %s\nDomains: %v\nScheme: %s\n", nekoXProxyBaseDomain, plds, proxyScheme)
 
 	putmapper := func(ip string, dc int) {
 		mapper[ip] = dc
@@ -67,7 +69,7 @@ func dc2wsurl(dc int) string {
 	if dc == 0 {
 		return ""
 	}
-	return fmt.Sprintf("https://%s.%s/api", nekoXProxyDomains[dc], nekoXProxyBaseDomain)
+	return fmt.Sprintf("%s://%s.%s/api", proxyScheme, nekoXProxyDomains[dc], nekoXProxyBaseDomain)
 }
 
 func ip2dc(ip string) int {
