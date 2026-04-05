@@ -25,11 +25,7 @@ func parseNekoXString(a string) bool {
 
 	nekoXProxyBaseDomain = u.Host
 
-	if u.Scheme == "ws" {
-		proxyScheme = "http"
-	} else {
-		proxyScheme = "https"
-	}
+	proxyScheme = u.Scheme
 
 	fmt.Printf("Base domain: %s\nScheme: %s\n", nekoXProxyBaseDomain, proxyScheme)
 	return true
@@ -47,7 +43,7 @@ func loadMapper(path string) error {
 	return nil
 }
 
-func ip2wsurl(ip string) string {
+func ip2url(ip string) string {
 	sub := ip2subdomain(ip)
 	if sub == "" {
 		return ""

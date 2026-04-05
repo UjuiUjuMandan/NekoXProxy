@@ -11,7 +11,7 @@ var client *http.Client
 
 func main() {
 	listen := flag.String("l", "127.0.0.1:26641", "HttpProxy listen port")
-	_nekoXProxyString := flag.String("p", "", "Relay base URL (e.g. ws://mtproto.example.com)")
+	_nekoXProxyString := flag.String("p", "", "Relay base URL (e.g. http://mtproto.example.com)")
 	configFile := flag.String("c", "dcmap.json", "IP-to-subdomain mapping config file")
 	flag.Parse()
 

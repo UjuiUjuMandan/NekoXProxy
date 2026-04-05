@@ -14,11 +14,11 @@ func relay(w http.ResponseWriter, r *http.Request) {
 		host = u.Host
 	}
 	reqip := host
-	wsurl := ip2wsurl(reqip)
+	relayURL := ip2url(reqip)
 
-	log.Printf("%s %s -> %s", r.Method, reqip, wsurl)
+	log.Printf("%s %s -> %s", r.Method, reqip, relayURL)
 
-	if wsurl == "" {
+	if relayURL == "" {
 		log.Printf("no relay for %s", reqip)
 		w.WriteHeader(502)
 		return
@@ -29,7 +29,7 @@ func relay(w http.ResponseWriter, r *http.Request) {
 		body = r.Body
 	}
 
-	req, _ := http.NewRequest(r.Method, wsurl, body)
+	req, _ := http.NewRequest(r.Method, relayURL, body)
 	a, err := client.Do(req)
 	if err != nil {
 		log.Printf("upstream error: %v", err)
@@ -41,7 +41,7 @@ func relay(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(k, a.Header.Get(k))
 	}
 
-	log.Printf("response %d <- %s", a.StatusCode, wsurl)
+	log.Printf("response %d <- %s", a.StatusCode, relayURL)
 	w.WriteHeader(a.StatusCode)
 	io.Copy(w, a.Body)
 }
